@@ -9,9 +9,9 @@ datasource db {
 
 model User {
   id                String     @id @default(uuid())
-  displayName       String?    @unique
+  username          String?    @unique
   email             String?    @unique
-  password          String?
+  passwordHash      String?
   status            UserStatus @default(offline)
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt

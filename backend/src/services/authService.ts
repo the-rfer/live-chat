@@ -11,9 +11,10 @@ export const RegisterInput = z.object({
 export type RegisterInputType = z.infer<typeof RegisterInput>;
 
 export const LoginInput = z.object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string(),
 });
+
 export type LoginInputType = z.infer<typeof LoginInput>;
 
 export async function registerUser(input: RegisterInputType) {
