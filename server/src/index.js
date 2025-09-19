@@ -1,21 +1,15 @@
-// import app from './server.js';
-// import config from './config.js';
+//NOTE: All cluttered for testing purposes, refactor later
 
-// app.listen(config.port, () => {
-//     console.log(`Server is running on port ${config.port}`);
-// });
-
-import express from 'express';
+import crypto from 'node:crypto';
 import { createServer } from 'node:http';
+import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { Server } from 'socket.io';
-import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
-import { verify } from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
 import { createClient } from 'redis';
-// import crypto from 'crypto';
-import rateLimit from 'express-rate-limit';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -204,11 +198,9 @@ app.put('/api/profile', protectRoute, async (req, res) => {
     }
 });
 
-//TODO: Add friend route
-
 // --- Friend Management Routes ---
 
-// Search for users (rate limited)
+//FIXME: modificar para aguardar x segundos antes de iniciar pesquisa
 const searchLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per window
@@ -361,7 +353,7 @@ io.use((socket, next) => {
         return next(new Error('Authentication error: No token provided.'));
     }
 
-    verify(token, JWT_ACCESS_SECRET, (err, decoded) => {
+    jwt.verify(token, JWT_ACCESS_SECRET, (err, decoded) => {
         if (err) {
             return next(new Error('Authentication error: Invalid token.'));
         }
@@ -519,12 +511,3 @@ const PORT = 3001;
 server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
-
-/* TODO: 
-    1. update profile routes
-    2. manage convo rooms / status
-    3. redis storage
-    4. db chat history store 
-    5. add friends / accept requests / block users
-    6. update read receipts
-*/
