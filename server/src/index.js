@@ -9,16 +9,29 @@ import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import cookieParser from 'cookie-parser';
-import cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { verify } from 'jsonwebtoken';
-//TODO: Create redis instance
+import { createClient } from 'redis';
+// import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 
 const prisma = new PrismaClient();
 const app = express();
 const server = createServer(app);
+
+const redisClient = createClient({
+    url: process.env.REDIS_URL,
+});
+
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+await redisClient.connect();
+console.log('Connected to Redis');
+
+//TODO: passar mapa de user online para redis
+let onlineUsers = new Map();
+
 const io = new Server(server, {
     cors: {
         origin: 'http://localhost:3000',
@@ -62,6 +75,20 @@ function setAuthCookies(res, accessToken, refreshToken) {
         maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 }
+
+const protectRoute = (req, res, next) => {
+    const token = req.cookies.accessToken;
+    if (!token) {
+        return res.status(401).json({ error: 'Not authorized, no token' });
+    }
+    try {
+        const decoded = jwt.verify(token, JWT_ACCESS_SECRET);
+        req.user = { id: decoded.userId }; // Attach user to the request
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Not authorized, token failed' });
+    }
+};
 
 // --- Routes ---
 
@@ -156,19 +183,167 @@ app.post('/refresh', (req, res) => {
     }
 });
 
+app.put('/api/profile', protectRoute, async (req, res) => {
+    const { fullName, profilePicUrl } = req.body;
+    const userId = req.user.id;
+
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { fullName, profilePicUrl },
+            select: {
+                id: true,
+                email: true,
+                fullName: true,
+                profilePicUrl: true,
+            },
+        });
+        res.json(updatedUser);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
 //TODO: Add friend route
 
-// delete friendships
-app.delete('/api/friends/:friendId', async (req, res) => {
+// --- Friend Management Routes ---
+
+// Search for users (rate limited)
+const searchLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.get('/api/users/search', protectRoute, searchLimiter, async (req, res) => {
+    const { query } = req.query;
+    if (!query || typeof query !== 'string' || query.length < 2) {
+        return res.json([]);
+    }
+
+    const users = await prisma.user.findMany({
+        where: {
+            OR: [
+                { email: { contains: query, mode: 'insensitive' } },
+                { username: { contains: query, mode: 'insensitive' } },
+            ],
+            // Don't return the current user in search results
+            NOT: { id: req.user.id },
+        },
+        select: { id: true, username: true, profilePicUrl: true },
+        take: 10,
+    });
+    res.json(users);
+});
+
+// Send a friend request
+app.post('/api/friends/requests', protectRoute, async (req, res) => {
+    const { receiverId } = req.body;
+    const senderId = req.user.id;
+
+    if (senderId === receiverId) {
+        return res.status(400).json({ error: "You can't add yourself." });
+    }
+
+    // TODO: Check if already friends or if a block exists
+    const newRequest = await prisma.friendRequest.create({
+        data: { senderId, receiverId },
+    });
+    // Optional: emit a real-time notification to the receiver if they are online
+    res.status(201).json(newRequest);
+});
+
+// Accept a friend request
+app.post(
+    '/api/friends/requests/:requestId/accept',
+    protectRoute,
+    async (req, res) => {
+        const { requestId } = req.params;
+        const currentUserId = req.user.id;
+
+        const request = await prisma.friendRequest.findUnique({
+            where: { id: requestId },
+        });
+
+        if (!request || request.receiverId !== currentUserId) {
+            return res.status(404).json({
+                error: 'Request not found or you are not the receiver.',
+            });
+        }
+
+        // Use a transaction to ensure both actions succeed or fail together
+        await prisma.$transaction([
+            // 1. Create the friendship
+            prisma.friendship.create({
+                data: {
+                    userAId: request.senderId,
+                    userBId: request.receiverId,
+                },
+            }),
+            // 2. Delete the request
+            prisma.friendRequest.delete({ where: { id: requestId } }),
+        ]);
+
+        res.status(200).json({ message: 'Friend request accepted.' });
+    }
+);
+
+// Create an invite link
+app.post('/api/friends/invites', protectRoute, async (req, res) => {
+    const code = crypto.randomBytes(4).toString('hex'); // e.g., 'a4f2c1b8'
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    const invite = await prisma.friendInvite.create({
+        data: { code, creatorId: req.user.id, expiresAt },
+    });
+    res.json({ inviteLink: `http://localhost:3000/invite/${invite.code}` });
+});
+
+// Block a user
+app.post('/api/users/:userId/block', protectRoute, async (req, res) => {
+    const { userId: blockedId } = req.params;
+    const blockerId = req.user.id;
+
+    await prisma.$transaction(async (tx) => {
+        // 1. Create the block record
+        await tx.block.create({ data: { blockerId, blockedId } });
+
+        // 2. Remove any existing friendship
+        await tx.friendship.deleteMany({
+            where: {
+                OR: [
+                    { userAId: blockerId, userBId: blockedId },
+                    { userAId: blockedId, userBId: blockerId },
+                ],
+            },
+        });
+    });
+
+    // 3. Invalidate the cache IMMEDIATELY
+    const userIds = [blockerId, blockedId].sort();
+    const cacheKey = `friendship:${userIds[0]}-${userIds[1]}`;
+    await redisClient.del(cacheKey);
+
+    res.status(200).json({ message: 'User blocked and friendship removed.' });
+});
+
+// Delete friendship
+app.delete('/api/friends/:friendId', protectRoute, async (req, res) => {
     const userId = req.user.id;
     const { friendId } = req.params;
 
     // 1. Delete the friendship from PostgreSQL
-    await prisma.friendship.delete({
-        //TODO: where clause
+    await prisma.friendship.deleteMany({
+        where: {
+            OR: [
+                { userAId: userId, userBId: friendId },
+                { userAId: friendId, userBId: userId },
+            ],
+        },
     });
 
-    // 2. INVALIDATE THE CACHE
+    // 2. Invalidate the cache
     const userIds = [userId, friendId].sort();
     const cacheKey = `friendship:${userIds[0]}-${userIds[1]}`;
     await redisClient.del(cacheKey);
@@ -199,6 +374,9 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.user.id}`);
     // every event handler from here on knows the user is authenticated
+
+    // mapa de users online
+    onlineUsers.set(socket.user.id, socket.id);
 
     socket.on('private_message', async (data) => {
         const { recipientId, content, chatId } = data;
@@ -290,6 +468,50 @@ io.on('connection', (socket) => {
             });
         }
     });
+
+    socket.on('messages_read', async ({ chatId, readerId }) => {
+        try {
+            // Update all messages in the chat that were sent to the reader
+            const { count } = await prisma.message.updateMany({
+                where: {
+                    chatId: chatId,
+                    recipientId: readerId, // The user who just read the messages
+                    status: { not: 'READ' },
+                },
+                data: {
+                    status: 'READ',
+                },
+            });
+
+            if (count > 0) {
+                // Find the other user in the chat to notify them
+                const message = await prisma.message.findFirst({
+                    where: { chatId },
+                    select: { senderId: true, recipientId: true },
+                });
+
+                if (message) {
+                    const otherUserId =
+                        message.senderId === readerId
+                            ? message.recipientId
+                            : message.senderId;
+                    const otherUserSocketId = onlineUsers.get(otherUserId);
+
+                    if (otherUserSocketId) {
+                        // Notify the other user that their messages were read
+                        io.to(otherUserSocketId).emit('chat_read', { chatId });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error updating read receipts:', error);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        onlineUsers.delete(socket.user.id);
+        console.log(`User disconnected: ${socket.user.id}`);
+    });
 });
 
 // --- Start ---
@@ -303,4 +525,6 @@ server.listen(PORT, () => {
     2. manage convo rooms / status
     3. redis storage
     4. db chat history store 
+    5. add friends / accept requests / block users
+    6. update read receipts
 */

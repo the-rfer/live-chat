@@ -16,9 +16,13 @@
         "dev": "cross-env NODE_ENV=dev dotenv -e .env.development nodemon",
         "start": "cross-env NODE_ENV=prod dotenv -e .env.production node src/index.js",
         "db:dev:migrate": "dotenv -e .env.development -- npx prisma migrate dev --schema=./prisma/schema.prisma",
+        "db:dev:seed": "dotenv -e .env.development -- node prisma/seed.js",
         "db:prod:migrate": "dotenv -e .env.production -- npx prisma migrate deploy --schema=./prisma/schema.prisma",
         "db:studio": "dotenv -e .env.development -- npx prisma studio --schema=./prisma/schema.prisma",
-        "test:socket": "cross-env NODE_ENV=dev dotenv -e .env.development node tests/socket.js"
+        "test:socket": "cross-env NODE_ENV=dev dotenv -e .env.development node tests/socket.js",
+        "docker:up": "docker compose up -d",
+        "docker:down": "docker compose down",
+        "docker:logs": "docker compose logs -f"
     },
     "dependencies": {
         "@orpc/server": "^1.8.8",
@@ -28,13 +32,16 @@
         "cors": "^2.8.5",
         "dotenv": "^17.2.2",
         "express": "^5.1.0",
+        "express-rate-limit": "^8.1.0",
         "jsonwebtoken": "^9.0.2",
+        "redis": "^5.8.2",
         "socket.io": "^4.8.1",
         "zod": "^4.1.8"
     },
     "devDependencies": {
         "@types/cookie": "^0.6.0",
         "cross-env": "^10.0.0",
+        "date-fns": "^4.1.0",
         "dotenv-cli": "^10.0.0",
         "fetch-cookie": "^3.1.0",
         "node-fetch": "^3.3.2",

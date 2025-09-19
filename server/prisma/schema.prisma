@@ -27,15 +27,54 @@ model User {
   settings       Setting?
   friends        Friendship[]   @relation("UserFriends")
   friendOf       Friendship[]   @relation("FriendOfUser")
+
+  sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  createdInvites         FriendInvite[]
+  blockedUsers           Block[]         @relation("BlockedByUser")
+  blockedBy              Block[]         @relation("BlockedUsers")
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("SentFriendRequests", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedFriendRequests", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model FriendInvite {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  creatorId String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  creator User @relation(fields: [creatorId], references: [id])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockedByUser", fields: [blockerId], references: [id])
+  blocked User @relation("BlockedUsers", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
 }
 
 model Friendship {
-  id        String       @id @default(uuid())
+  id        String   @id @default(uuid())
   userId    String
   friendId  String
-  status    FriendStatus @default(pending)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user   User @relation("UserFriends", fields: [userId], references: [id])
   friend User @relation("FriendOfUser", fields: [friendId], references: [id])
@@ -125,11 +164,4 @@ model Notification {
 enum UserStatus {
   online
   offline
-}
-
-enum FriendStatus {
-  pending
-  accepted
-  refused
-  blocked
 }
