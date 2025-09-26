@@ -1,18 +1,6 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabaseServer';
 import { LoginForm } from '@/components/login';
 
 export default async function Page({ searchParams }) {
-    const supabase = await createClient();
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    // evitar que users autenticados visitem pagina de login novamente
-    if (user) {
-        return redirect('/');
-    }
-
     const { error } = await searchParams;
 
     return (

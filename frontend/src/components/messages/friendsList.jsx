@@ -7,6 +7,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useIsOpen } from '@/hooks/useIsOpen';
+import { useEffect, useState } from 'react';
 
 // temp user images
 import m1 from '@/assets/avatars/m1.svg?url';
@@ -18,50 +19,76 @@ import g2 from '@/assets/avatars/g2.svg?url';
 export function FriendsList() {
     const { isOpen } = useIsOpen();
 
+    const [users, setUsers] = useState([]);
+
     //TODO: fetch users from db, requer promisse
+    // fetch friends & friendsOf
+
+    const fetchUsers = async () => {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/friends`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+
+        const data = await res.json();
+        console.log('fetched users: ', data);
+        setUsers(data);
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    console.log('users: ', users);
 
     // temp data
-    const users = [
-        {
-            name: 'Luís Chaves',
-            status: true,
-            avatar: m1,
-            hasUnread: true,
-        },
-        {
-            name: 'Humberto Sousa',
-            status: true,
-            avatar: m2,
-        },
-        {
-            name: 'Barbara Faria',
-            status: true,
-            avatar: g2,
-        },
-        {
-            name: 'António Jardim',
-            status: false,
-            avatar: m3,
-            hasUnread: true,
-        },
-        {
-            name: 'Filipa Freitas',
-            status: false,
-            avatar: g1,
-        },
-    ];
+    // const users = [
+    //     {
+    //         name: 'Luís Chaves',
+    //         status: true,
+    //         avatar: m1,
+    //         hasUnread: true,
+    //     },
+    //     {
+    //         name: 'Humberto Sousa',
+    //         status: true,
+    //         avatar: m2,
+    //     },
+    //     {
+    //         name: 'Barbara Faria',
+    //         status: true,
+    //         avatar: g2,
+    //     },
+    //     {
+    //         name: 'António Jardim',
+    //         status: false,
+    //         avatar: m3,
+    //         hasUnread: true,
+    //     },
+    //     {
+    //         name: 'Filipa Freitas',
+    //         status: false,
+    //         avatar: g1,
+    //     },
+    // ];
 
-    return (
+    return users.length > 0 ? (
         <>
-            <UserList users={users.filter((u) => u.status)} isOpen={isOpen} />
-            <UserList users={users.filter((u) => !u.status)} isOpen={isOpen} />
+            <UserList
+                users={users.filter((u) => u.status === 'online')}
+                isOpen={isOpen}
+            />
+            <UserList
+                users={users.filter((u) => u.status === 'offline')}
+                isOpen={isOpen}
+            />
         </>
+    ) : (
+        isOpen && <p className='text-sm text-center'>Não tem contactos.</p>
     );
 }
 
 function UserList({ users, isOpen }) {
-    if (users.length === 0)
-        return <p className='text-sm text-center'>Não tem contactos.</p>;
     return users.map((user, index) => (
         <Tooltip key={index} delayDuration={300}>
             <TooltipTrigger asChild>
@@ -73,12 +100,12 @@ function UserList({ users, isOpen }) {
                 >
                     <Avatar className='mr-auto border rounded-full w-8 h-8'>
                         <AvatarImage
-                            src={user.avatar.src}
+                            src={user.profilePictureUrl}
                             alt={user.name}
                             className='object-cover'
                         />
                         <AvatarFallback className='rounded-full'>
-                            {user.name
+                            {user.fullName
                                 .split(' ')
                                 .map((w) => w[0])
                                 .join('')}
@@ -86,12 +113,12 @@ function UserList({ users, isOpen }) {
                     </Avatar>
 
                     {isOpen ? (
-                        <div className='w-full text-left truncate'>
-                            {user.name}
+                        <div className='flex flex-col w-full text-left truncate'>
+                            {user.fullName}
                         </div>
                     ) : (
                         <TooltipContent sideOffset={4} side='right'>
-                            {user.name}
+                            {user.fullName}
                         </TooltipContent>
                     )}
 

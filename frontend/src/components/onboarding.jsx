@@ -13,12 +13,12 @@ import {
 import { redirect } from 'next/router';
 import { AvatarUploader } from '@/components/updateAvatar';
 import { UpdateNames } from '@/components/updateDisplayName';
-import {
-    updateFullName,
-    updateDisplayName,
-    uploadAvatar,
-} from '@/app/actions/userProfile';
-import { createClient } from '@/lib/supabaseClient';
+// import {
+//     updateFullName,
+//     updateDisplayName,
+//     uploadAvatar,
+// } from '@/actions/userProfile';
+// import { createClient } from '@/lib/supabaseClient';
 
 export function OnboardingForm() {
     const [displayName, setDisplayName] = useState('');
@@ -26,7 +26,7 @@ export function OnboardingForm() {
     const [finalImageUrl, setFinalImageUrl] = useState(null);
     const [available, setAvailable] = useState(null);
     const [finalImageFile, setFinalImageFile] = useState(null);
-    const supabase = createClient();
+    // const supabase = createClient();
 
     console.log(
         'DEBUG onboarding-form.jsx:\nfullName: ',
@@ -37,33 +37,33 @@ export function OnboardingForm() {
         finalImageUrl
     );
 
-    async function handleSubmit() {
-        if (
-            !displayName.trim() ||
-            !finalImageUrl ||
-            !available ||
-            !fullName.trim()
-        )
-            return console.warn('handlesubmit chamado mas não submeteu dados.');
+    // async function handleSubmit() {
+    //     if (
+    //         !displayName.trim() ||
+    //         !finalImageUrl ||
+    //         !available ||
+    //         !fullName.trim()
+    //     )
+    //         return console.warn('handlesubmit chamado mas não submeteu dados.');
 
-        try {
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
+    //     try {
+    //         const {
+    //             data: { user },
+    //         } = await supabase.auth.getUser();
 
-            await Promise.all([
-                updateDisplayName(user.id, displayName),
-                updateFullName(user.id, fullName),
-                uploadAvatar(user.id, finalImageFile),
-            ]);
+    //         await Promise.all([
+    //             updateDisplayName(user.id, displayName),
+    //             updateFullName(user.id, fullName),
+    //             uploadAvatar(user.id, finalImageFile),
+    //         ]);
 
-            //FIXME: falta alterar flag de onboarded para true
+    //         //FIXME: falta alterar flag de onboarded para true
 
-            redirect('/'); //TODO: enviar searchparams para ativar modal de onboarding
-        } catch (e) {
-            console.warn('algo correu mal: ', e.message);
-        }
-    }
+    //         redirect('/'); //TODO: enviar searchparams para ativar modal de onboarding
+    //     } catch (e) {
+    //         console.warn('algo correu mal: ', e.message);
+    //     }
+    // }
 
     return (
         <>
@@ -104,7 +104,7 @@ export function OnboardingForm() {
                     disabled={
                         !available || !finalImageUrl || fullName.length < 3
                     }
-                    onClick={handleSubmit}
+                    // onClick={handleSubmit}
                 >
                     <span className='group-hover:animate-pulse'>Finalizar</span>
                 </Button>

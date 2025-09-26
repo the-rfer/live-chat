@@ -11,10 +11,29 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { login } from '@/app/actions/auth';
+
+import { useAuth } from '@/context/auth-context';
 
 // APENAS LOGIN - Sign up fica por invite only por agora.
 export function LoginForm({ error }) {
+    const { login } = useAuth();
+
+    const handleLogin = async (formData) => {
+        console.log(
+            'Email: ',
+            formData.get('email'),
+            '\nPassword: ',
+            formData.get('password')
+        );
+
+        const res = await login(
+            formData.get('email'),
+            formData.get('password')
+        );
+
+        console.log('LOGIN RES: ', res);
+    };
+
     return (
         <div className='flex flex-col gap-6'>
             <Card>
@@ -25,7 +44,7 @@ export function LoginForm({ error }) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={login}>
+                    <form action={handleLogin}>
                         <div className='flex flex-col gap-6'>
                             <div className='gap-3 grid'>
                                 <Label htmlFor='email'>Email</Label>

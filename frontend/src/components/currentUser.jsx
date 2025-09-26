@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabaseClient';
 import { redirect, RedirectType } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,11 +24,10 @@ import {
 import { useIsOpen } from '@/hooks/useIsOpen';
 
 export function CurrentUser({ connection }) {
-    const supabase = createClient();
     const { isOpen } = useIsOpen();
 
     async function signOut() {
-        const { error } = await supabase.auth.signOut();
+        const error = false; // TODO: implementar sign out
         if (!error) {
             redirect('/login', RedirectType.replace);
         }

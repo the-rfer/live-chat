@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AtSignIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { isDisplayNameAvailable } from '@/app/actions/userProfile';
+// import { isDisplayNameAvailable } from '@/actions/userProfile';
 import { debounce } from '@/lib/utils';
 
 export function UpdateNames({
@@ -39,7 +39,7 @@ export function UpdateNames({
             setError(false);
         }
 
-        checkAvailability(name);
+        // checkAvailability(name);
     }
 
     return (
