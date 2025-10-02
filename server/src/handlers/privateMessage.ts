@@ -1,4 +1,4 @@
-import { CustomSocket, Context } from './types';
+import { CustomSocket, Context } from '@/lib/types';
 
 export default function privateMessageHandler(context: Context) {
     const { io, prisma, redisClient, onlineUsers } = context;

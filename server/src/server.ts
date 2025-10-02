@@ -11,7 +11,7 @@ app.use(
 );
 
 app.get('/health', (_, res) => {
-    res.send('App is running OK');
+    res.sendStatus(200);
 });
 
 app.use(express.json());

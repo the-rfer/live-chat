@@ -1,4 +1,4 @@
-import { CustomSocket, Context } from './types';
+import { CustomSocket, Context } from '@/lib/types';
 
 export default function messagesReadHandler(context: Context) {
     const { io, prisma, onlineUsers } = context;

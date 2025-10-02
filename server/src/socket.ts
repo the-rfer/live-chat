@@ -1,25 +1,14 @@
-import { auth } from '@/lib/auth';
-import { fromNodeHeaders } from 'better-auth/node';
-import { Socket, Server as SocketIOServer } from 'socket.io';
 import { Server as HttpServer } from 'node:http';
-import privateMessageHandler from './handlers/privateMessage';
-import typingStartHandler from './handlers/typingStart';
-import typingStopHandler from './handlers/typingStop';
-import messagesReadHandler from './handlers/messagesRead';
-import disconnectHandler from './handlers/disconnect';
-import { Context, CustomSocket as HandlerSocket } from './handlers/types';
+import { fromNodeHeaders } from 'better-auth/node';
+import { Server as SocketIOServer } from 'socket.io';
 
-interface CustomSocket extends Socket {
-    user?: {
-        id: string;
-        email: string;
-        emailVerified: boolean;
-        name: string;
-        image?: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-    };
-}
+import { auth } from '@/lib/auth';
+import { Context, CustomSocket as HandlerSocket } from '@/lib/types';
+import privateMessageHandler from '@/handlers/privateMessage';
+import typingStartHandler from '@/handlers/typingStart';
+import typingStopHandler from '@/handlers/typingStop';
+import messagesReadHandler from '@/handlers/messagesRead';
+import disconnectHandler from '@/handlers/disconnect';
 
 //TODO: Passar para redis
 let onlineUsers = new Map();
@@ -32,7 +21,7 @@ export function ChatSocket(server: HttpServer) {
         },
     });
 
-    io.use(async (socket: CustomSocket, next) => {
+    io.use(async (socket: HandlerSocket, next) => {
         const headers = socket.handshake.headers;
 
         const session = await auth.api.getSession({
