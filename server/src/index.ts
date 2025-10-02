@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { ChatSocket } from './routes/socket';
+import { ChatSocket } from './socket';
 import app from './server';
 
 const port = process.env.PORT || 3333;
