@@ -1,0 +1,182 @@
+/* For information on how to create your own theme, please see:
+http://ionicframework.com/docs/theming/ */
+
+:root {
+    --ion-color-primary: #4f46e5;
+    --ion-color-secondary: #3b82f6;
+    --ion-color-light: #ffffff;
+    --ion-color-dark: #000000;
+    --ion-background-color: #ffffff;
+    --ion-text-color: #000000;
+    & .options-icon {
+        color: var(--ion-text-color);
+    }
+}
+
+body.dark {
+    --ion-color-primary: #818cf8;
+    --ion-color-secondary: #60a5fa;
+    --ion-color-light: #1a1a1a;
+    --ion-color-dark: #ffffff;
+    --ion-background-color: #0f0f0f;
+    --ion-text-color: #ffffff;
+    & .icons {
+        color: #ffffff;
+    }
+    & ion-skeleton-text {
+        --background-rgb: 255, 255, 255;
+    }
+}
+
+body {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.avatar-container {
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+
+.avatar-container ion-avatar {
+    width: 100%;
+    height: 100%;
+}
+
+.status-dot {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #4ade80;
+    border: 2px solid var(--ion-background-color, #fff);
+}
+
+.message-badge {
+    border-radius: 50%;
+    height: 20px;
+    width: 20px;
+    padding: 3px;
+    font-size: 0.75rem;
+    text-align: center;
+    line-height: 14px;
+}
+
+.friends-empty-card {
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+}
+
+.skeleton-thumbnail {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+
+.skeleton-avatar {
+    border-radius: 50%;
+}
+
+.avatar-header {
+    width: 32px;
+    height: 32px;
+}
+
+.option-button {
+    --background: transparent;
+    --box-shadow: none;
+    --padding-start: 0;
+    --padding-end: 0;
+    --min-width: 0;
+}
+
+.chat-screen {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.message {
+    border-radius: 12px;
+    padding: 8px 8px;
+    max-width: 70%;
+    word-wrap: break-word;
+    margin: 4px 0;
+    color: var(--ion-text-color);
+}
+
+.message-left {
+    display: flex;
+    justify-content: flex-start;
+    margin-right: auto;
+    border-bottom-left-radius: 0%;
+    background-color: var(--ion-color-light);
+}
+
+.message-right {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+    border-bottom-right-radius: 0%;
+    background-color: var(--ion-color-primary);
+    color: white;
+}
+
+.chat-input {
+    border: 1px solid var(--ion-color-primary);
+    height: 40px;
+    border-radius: 25px;
+    margin: 10px auto;
+    & input {
+        margin-left: 10px;
+    }
+}
+
+.auth-card {
+    width: 100%;
+    height: 100%;
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+    box-shadow: var(--ion-box-shadow-md);
+    border-radius: 8px;
+}
+
+.login {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 10px 0px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--ion-color-medium);
+    margin: 0.75rem 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--ion-color-medium);
+}
+
+.divider:not(:empty)::before {
+    margin-right: 0.75em;
+}
+
+.divider:not(:empty)::after {
+    margin-left: 0.75em;
+}
