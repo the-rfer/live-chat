@@ -1,24 +1,33 @@
 import { CustomSocket, Context } from '@/lib/types';
 
-export default function privateMessageHandler(context: Context) {
-    const { io, prisma, redisClient, onlineUsers } = context;
+export default function privateMessageHandler(
+    context: Context,
+    socket: CustomSocket
+) {
+    const { io, prisma, redis, OnlineUsers } = context;
 
-    return async (socket: CustomSocket, data: any) => {
+    return async (data: any) => {
         const { recipientId, content, chatId } = data;
         const senderId = socket.user?.id;
+
+        if (!senderId || !recipientId || !chatId || !content) {
+            socket.emit('error_message', {
+                message: 'Missing message details.',
+            });
+            return;
+        }
 
         const userIds = [senderId, recipientId].sort();
         const cacheKey = `friendship:${userIds[0]}-${userIds[1]}`;
 
         try {
-            const cachedFriendship = redisClient
-                ? await redisClient.get(cacheKey)
-                : null;
+            const cachedFriendship = redis ? await redis.get(cacheKey) : null;
 
             if (cachedFriendship === 'not_friends') {
-                return socket.emit('error_message', {
+                socket.emit('error_message', {
                     message: 'You are not friends.',
                 });
+                return;
             }
 
             if (cachedFriendship !== 'is_friends') {
@@ -32,18 +41,19 @@ export default function privateMessageHandler(context: Context) {
                 });
 
                 if (!areFriends) {
-                    if (redisClient) {
-                        await redisClient.set(cacheKey, 'not_friends', {
+                    if (redis) {
+                        await redis.set(cacheKey, 'not_friends', {
                             EX: 3600,
                         });
                     }
-                    return socket.emit('error_message', {
+                    socket.emit('error_message', {
                         message: 'You can only message friends.',
                     });
+                    return;
                 }
 
-                if (redisClient) {
-                    await redisClient.set(cacheKey, 'is_friends', { EX: 3600 });
+                if (redis) {
+                    await redis.set(cacheKey, 'is_friends', { EX: 3600 });
                 }
             }
 
@@ -56,7 +66,7 @@ export default function privateMessageHandler(context: Context) {
                 },
             });
 
-            const recipientSocketId = onlineUsers.get(recipientId);
+            const recipientSocketId = await OnlineUsers.get(recipientId);
             if (recipientSocketId) {
                 io.to(recipientSocketId).emit('new_message', savedMessage);
             }

@@ -1,4 +1,5 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
+import { redis } from './redis';
 
 export interface CustomSocket extends Socket {
     user?: {
@@ -14,8 +15,7 @@ export interface CustomSocket extends Socket {
 
 export type Context = {
     io: SocketIOServer;
-    prisma: any; // kept as any to avoid tight coupling; the project already imports prisma elsewhere
-    // redisClient left as any to avoid requiring redis types in this refactor
-    redisClient?: any;
-    onlineUsers: Map<any, any>;
+    prisma: typeof import('./prisma').prisma;
+    redis: typeof redis;
+    OnlineUsers: typeof import('./redis').OnlineUsers;
 };

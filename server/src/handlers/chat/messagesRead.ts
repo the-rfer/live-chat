@@ -1,10 +1,17 @@
 import { CustomSocket, Context } from '@/lib/types';
 
-export default function messagesReadHandler(context: Context) {
-    const { io, prisma, onlineUsers } = context;
+export default function messagesReadHandler(
+    context: Context,
+    socket: CustomSocket
+) {
+    const { io, prisma, OnlineUsers } = context;
 
-    return async (socket: CustomSocket, data: any) => {
-        const { chatId, readerId } = data;
+    return async (data: any) => {
+        const { chatId, readerId: payloadReaderId } = data;
+        const readerId = payloadReaderId ?? socket.user?.id;
+        if (!chatId || !readerId) {
+            return;
+        }
         try {
             const { count } = await prisma.message.updateMany({
                 where: {
@@ -28,7 +35,9 @@ export default function messagesReadHandler(context: Context) {
                         message.senderId === readerId
                             ? message.recipientId
                             : message.senderId;
-                    const otherUserSocketId = onlineUsers.get(otherUserId);
+                    const otherUserSocketId = await OnlineUsers.get(
+                        otherUserId
+                    );
 
                     if (otherUserSocketId) {
                         io.to(otherUserSocketId).emit('chat_read', {

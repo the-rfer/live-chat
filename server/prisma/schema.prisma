@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/prisma"
 }
 
 datasource db {
@@ -9,7 +8,8 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id String @id @default(uuid())
+
   name          String
   email         String
   emailVerified Boolean   @default(false)
@@ -18,6 +18,29 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  username          String?    @unique
+  passwordHash      String?
+  status            UserStatus @default(offline)
+  onboarded         Boolean    @default(false)
+  profilePictureUrl String?
+  fullName          String?
+
+  messages         Message[]      @relation("MessageSender")
+  receivedMessages Message[]      @relation("MessageRecipient")
+  conversationsA   Conversation[] @relation("convoA")
+  conversationsB   Conversation[] @relation("convoB")
+  notifications    Notification[]
+  readReceipts     ReadReceipt[]
+  settings         Setting?
+  friends          Friendship[]   @relation("FriendshipInitiator")
+  friendOf         Friendship[]   @relation("FriendshipRecipient")
+
+  sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  createdInvites         FriendInvite[]
+  blockedUsers           Block[]         @relation("BlockedByUser")
+  blockedBy              Block[]         @relation("BlockedUsers")
 
   @@unique([email])
   @@map("user")
@@ -66,4 +89,145 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("SentFriendRequests", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedFriendRequests", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model FriendInvite {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  creatorId String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  creator User @relation(fields: [creatorId], references: [id])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockedByUser", fields: [blockerId], references: [id])
+  blocked User @relation("BlockedUsers", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+}
+
+model Friendship {
+  id        String   @id @default(uuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userA User @relation("FriendshipInitiator", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("FriendshipRecipient", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model Conversation {
+  id            String   @id @default(uuid())
+  userAId       String
+  userBId       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  retentionDays Int      @default(7)
+
+  userA User @relation("convoA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("convoB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model Message {
+  id          String        @id @default(uuid())
+  chatId      String
+  senderId    String
+  recipientId String
+  content     String
+  status      MessageStatus @default(SENT)
+  sentAt      DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  deleted   Boolean   @default(false)
+  deletedAt DateTime?
+  expiresAt DateTime?
+
+  conversation Conversation  @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender       User          @relation("MessageSender", fields: [senderId], references: [id])
+  recipient    User          @relation("MessageRecipient", fields: [recipientId], references: [id])
+  readReceipts ReadReceipt[]
+
+  @@index([chatId])
+  @@index([recipientId])
+  @@index([expiresAt])
+}
+
+model ReadReceipt {
+  id        String    @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime?
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+}
+
+model Setting {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  theme                   String?
+  notificationPreferences Json?
+  language                String?
+  chatHistoryRetention    String?
+  statusVisibility        String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum UserStatus {
+  online
+  offline
 }

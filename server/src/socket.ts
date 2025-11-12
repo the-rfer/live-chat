@@ -2,16 +2,16 @@ import { Server as HttpServer } from 'node:http';
 import { fromNodeHeaders } from 'better-auth/node';
 import { Server as SocketIOServer } from 'socket.io';
 
-import { auth } from '@/lib/auth';
 import { Context, CustomSocket as HandlerSocket } from '@/lib/types';
-import privateMessageHandler from '@/handlers/privateMessage';
-import typingStartHandler from '@/handlers/typingStart';
-import typingStopHandler from '@/handlers/typingStop';
-import messagesReadHandler from '@/handlers/messagesRead';
-import disconnectHandler from '@/handlers/disconnect';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { OnlineUsers, redis } from '@/lib/redis';
 
-//TODO: Passar para redis
-let onlineUsers = new Map();
+import privateMessageHandler from '@/handlers/chat/privateMessage';
+import typingStartHandler from '@/handlers/chat/typingStart';
+import typingStopHandler from '@/handlers/chat/typingStop';
+import messagesReadHandler from '@/handlers/chat/messagesRead';
+import disconnectHandler from '@/handlers/chat/disconnect';
 
 export function ChatSocket(server: HttpServer) {
     const io = new SocketIOServer(server, {
@@ -38,26 +38,29 @@ export function ChatSocket(server: HttpServer) {
         next();
     });
 
-    io.on('connection', (socket: HandlerSocket) => {
+    io.on('connection', async (socket: HandlerSocket) => {
         console.log('🔌 A user connected with socket ID:', socket.id);
 
-        onlineUsers.set(socket.user?.id, socket.id);
+        if (socket.user?.id) {
+            try {
+                await OnlineUsers.set(socket.user.id, socket.id);
+            } catch (error) {
+                console.error('Failed to register online user', error);
+            }
+        }
 
         const context: Context = {
             io,
-            prisma:
-                (global as any).prisma ||
-                (globalThis as any).prisma ||
-                undefined,
-            redisClient: (global as any).redisClient || undefined,
-            onlineUsers,
+            prisma,
+            redis,
+            OnlineUsers,
         };
 
-        socket.on('private_message', privateMessageHandler(context));
-        socket.on('typing_start', typingStartHandler(context));
-        socket.on('typing_stop', typingStopHandler(context));
-        socket.on('messages_read', messagesReadHandler(context));
-        socket.on('disconnect', disconnectHandler(context));
+        socket.on('private_message', privateMessageHandler(context, socket));
+        socket.on('typing_start', typingStartHandler(context, socket));
+        socket.on('typing_stop', typingStopHandler(context, socket));
+        socket.on('messages_read', messagesReadHandler(context, socket));
+        socket.on('disconnect', disconnectHandler(context, socket));
     });
 
     return io;
