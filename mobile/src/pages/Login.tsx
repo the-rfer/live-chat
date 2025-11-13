@@ -22,8 +22,30 @@ import {
     mail,
     person,
 } from 'ionicons/icons';
+import { signIn, signOut } from '../lib/auth-client';
 
 const Home: React.FC = () => {
+    //TODO: Estas funções são apenas para teste, passar para lib mais tarde
+    async function handleLogin() {
+        const result = await signIn.email({
+            email: 'test@email.com',
+            password: 'password',
+        });
+
+        console.log('Login result:', result);
+    }
+
+    async function testSession() {
+        const result = await fetch('http://localhost:3333/api/me', {
+            credentials: 'include',
+        });
+        const data = await result.json();
+        console.log('Session data:', data);
+    }
+
+    function logout() {
+        signOut();
+    }
     return (
         <IonPage id='page-content'>
             <IonContent fullscreen>
@@ -91,7 +113,13 @@ const Home: React.FC = () => {
                                         />
                                     </IonButton>
                                 </IonInput>
-                                <IonButton>Login</IonButton>
+                                <IonButton onClick={handleLogin}>
+                                    Login
+                                </IonButton>
+                                <IonButton onClick={testSession}>
+                                    Test session
+                                </IonButton>
+                                <IonButton onClick={logout}>Logout</IonButton>
                             </IonSegmentContent>
                             <IonSegmentContent id='register' className='login'>
                                 <IonButton>

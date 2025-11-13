@@ -10,17 +10,16 @@ datasource db {
 model User {
   id String @id @default(uuid())
 
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-
-  username          String?    @unique
+  name              String
+  email             String
+  emailVerified     Boolean    @default(false)
+  image             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @default(now()) @updatedAt
+  sessions          Session[]
+  accounts          Account[]
   passwordHash      String?
+  username          String?    @unique
   status            UserStatus @default(offline)
   onboarded         Boolean    @default(false)
   profilePictureUrl String?
