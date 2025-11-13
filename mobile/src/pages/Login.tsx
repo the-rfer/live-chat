@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
     IonButton,
     IonCard,
@@ -12,6 +13,7 @@ import {
     IonSegmentButton,
     IonSegmentContent,
     IonSegmentView,
+    useIonToast,
 } from '@ionic/react';
 import {
     at,
@@ -23,16 +25,30 @@ import {
     person,
 } from 'ionicons/icons';
 import { signIn, signOut } from '../lib/auth-client';
+import { signInWithEmail } from '../lib/auth';
 
 const Home: React.FC = () => {
-    //TODO: Estas funções são apenas para teste, passar para lib mais tarde
-    async function handleLogin() {
-        const result = await signIn.email({
-            email: 'test@email.com',
-            password: 'password',
-        });
+    const [toast] = useIonToast();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-        console.log('Login result:', result);
+    function displayToast(message: string) {
+        toast({
+            message,
+            duration: 1500,
+            position: 'bottom',
+        });
+    }
+
+    async function handleLoginWithEmail() {
+        const res = await signInWithEmail(email, password);
+
+        displayToast(res.message);
+        // if (res.success) {
+        //     displayToast(res.message);
+        // } else {
+        //     displayToast(res.message);
+        // }
     }
 
     async function testSession() {
@@ -77,15 +93,19 @@ const Home: React.FC = () => {
                                 </IonButton>
                                 <div className='divider'>or</div>
                                 <IonInput
-                                    label='Username'
+                                    label='Email'
                                     labelPlacement='floating'
                                     fill='outline'
-                                    placeholder='Enter your username'
+                                    placeholder='Enter your email'
                                     type='text'
+                                    value={email}
+                                    onIonInput={(event) =>
+                                        setEmail(event.target.value as string)
+                                    }
                                 >
                                     <IonIcon
                                         slot='start'
-                                        icon={person}
+                                        icon={at}
                                         aria-hidden='true'
                                     />
                                 </IonInput>
@@ -95,6 +115,12 @@ const Home: React.FC = () => {
                                     fill='outline'
                                     placeholder='Enter your password'
                                     type='password'
+                                    value={password}
+                                    onIonInput={(event) =>
+                                        setPassword(
+                                            event.target.value as string
+                                        )
+                                    }
                                 >
                                     <IonIcon
                                         slot='start'
@@ -113,7 +139,7 @@ const Home: React.FC = () => {
                                         />
                                     </IonButton>
                                 </IonInput>
-                                <IonButton onClick={handleLogin}>
+                                <IonButton onClick={handleLoginWithEmail}>
                                     Login
                                 </IonButton>
                                 <IonButton onClick={testSession}>
