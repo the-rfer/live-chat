@@ -27,5 +27,11 @@ export const auth = betterAuth({
     advanced: {
         useSecureCookies: isProduction,
     },
-    trustedOrigins: ['http://localhost:5173', 'http://localhost:3333'],
+    trustedOrigins: [
+        'http://localhost',
+        'capacitor://localhost',
+        'http://localhost:5173',
+        'http://localhost:3333',
+        'http://10.0.2.2:3333',
+    ],
 });

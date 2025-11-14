@@ -11,7 +11,8 @@ import {
     IonToolbar,
 } from '@ionic/react';
 import { book, build, exit, home } from 'ionicons/icons';
-
+import { signOut } from '@/lib/auth-client';
+import { useHistory } from 'react-router';
 import ThemeToggle from './ThemeToggle';
 
 //TODO:
@@ -24,6 +25,17 @@ const MENU_OPTIONS = [
 ];
 
 const Menu = ({ contentId }: { contentId: string }) => {
+    const navigate = useHistory();
+
+    function handleSignOut() {
+        signOut({
+            fetchOptions: {
+                onSuccess: () => {
+                    navigate.push('/login');
+                },
+            },
+        });
+    }
     return (
         <IonMenu contentId={contentId} type='reveal'>
             <IonHeader>
@@ -57,7 +69,7 @@ const Menu = ({ contentId }: { contentId: string }) => {
             <IonFooter>
                 <IonItem lines='none'>
                     <IonIcon slot='start' icon={exit} className='icons' />
-                    <IonLabel>Logout</IonLabel>
+                    <IonLabel onClick={handleSignOut}>Logout</IonLabel>
                 </IonItem>
             </IonFooter>
         </IonMenu>

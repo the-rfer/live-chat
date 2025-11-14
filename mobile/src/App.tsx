@@ -1,13 +1,14 @@
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { SafeArea } from 'capacitor-plugin-safe-area';
-import { Redirect, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 
 import { stackSlideAnimation } from './animations/slideAnimation';
+import { UserProvider } from './components/UserContext';
 import { applyInitialTheme } from './hooks/useTheme';
-import Chat from './pages/Chat';
-import Home from './pages/Home';
-import Login from './pages/Login';
+import Chat from '@/pages/Chat';
+import Home from '@/pages/Home';
+import Login from '@/pages/Login';
 
 /* Theme variables */
 import './theme/variables.css';
@@ -56,12 +57,13 @@ const App: React.FC = () => {
     return (
         <IonApp>
             <IonReactRouter>
-                <IonRouterOutlet animation={stackSlideAnimation}>
-                    <Redirect exact from='/' to='/home' />
-                    <Route path='/home' component={Home} />
-                    <Route path='/chat/:id' component={Chat} />
-                    <Route path='/login' component={Login} />
-                </IonRouterOutlet>
+                <UserProvider>
+                    <IonRouterOutlet animation={stackSlideAnimation}>
+                        <Route path='/home' component={Home} />
+                        <Route path='/chat/:id' component={Chat} />
+                        <Route path='/login' component={Login} />
+                    </IonRouterOutlet>
+                </UserProvider>
             </IonReactRouter>
         </IonApp>
     );
