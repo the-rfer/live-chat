@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -40,6 +41,8 @@ model User {
   createdInvites         FriendInvite[]
   blockedUsers           Block[]         @relation("BlockedByUser")
   blockedBy              Block[]         @relation("BlockedUsers")
+
+  passkeys Passkey[]
 
   @@unique([email])
   @@map("user")
@@ -229,4 +232,21 @@ enum MessageStatus {
 enum UserStatus {
   online
   offline
+}
+
+model Passkey {
+  id           String    @id
+  name         String?
+  publicKey    String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime?
+  aaguid       String?
+
+  @@map("passkey")
 }

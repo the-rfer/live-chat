@@ -1,4 +1,6 @@
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
+import { passkey } from 'better-auth/plugins/passkey';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '@/lib/prisma';
 
@@ -33,5 +35,18 @@ export const auth = betterAuth({
         'http://localhost:5173',
         'http://localhost:3333',
         'http://10.0.2.2:3333',
+    ],
+    plugins: [
+        passkey({
+            rpID: 'localhost',
+            rpName: 'Shh.chat',
+            origin: 'http://localhost',
+            authenticatorSelection: {
+                authenticatorAttachment: 'platform',
+                residentKey: 'required',
+                userVerification: 'required',
+            },
+        }),
+        bearer(),
     ],
 });

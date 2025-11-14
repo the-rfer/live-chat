@@ -144,11 +144,10 @@ body {
 .auth-card {
     width: 100%;
     height: 100%;
-    max-width: 400px;
     margin: auto;
-    padding: 20px;
     box-shadow: var(--ion-box-shadow-md);
-    border-radius: 8px;
+    /* max-width: 400px; */
+    /* padding: 20px; */
 }
 
 .login {

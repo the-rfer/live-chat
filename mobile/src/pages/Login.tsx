@@ -110,6 +110,7 @@ const LoginContent: React.FC<{ displayToast: (message: string) => void }> = ({
                 type='text'
                 value={email}
                 onIonInput={(event) => setEmail(event.target.value as string)}
+                autocomplete='webauthn'
             >
                 <IonIcon slot='start' icon={at} aria-hidden='true' />
             </IonInput>

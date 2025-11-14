@@ -11,9 +11,9 @@ import {
     IonToolbar,
 } from '@ionic/react';
 import { book, build, exit, home } from 'ionicons/icons';
-import { signOut } from '@/lib/auth-client';
 import { useHistory } from 'react-router';
 import ThemeToggle from './ThemeToggle';
+import { logout } from '@/lib/auth';
 
 //TODO:
 // 1. Create nested route for options /settins/:setting so all options can be dealt in same page with sub menu
@@ -27,15 +27,10 @@ const MENU_OPTIONS = [
 const Menu = ({ contentId }: { contentId: string }) => {
     const navigate = useHistory();
 
-    function handleSignOut() {
-        signOut({
-            fetchOptions: {
-                onSuccess: () => {
-                    navigate.push('/login');
-                },
-            },
-        });
+    async function handleSignOut() {
+        await logout().then(() => navigate.push('/login'));
     }
+
     return (
         <IonMenu contentId={contentId} type='reveal'>
             <IonHeader>

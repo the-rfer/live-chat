@@ -1,6 +1,7 @@
-import { config } from '@/config';
-import { signIn } from './auth-client';
 import { type User } from '@/lib/types';
+import { config } from '@/config';
+import { clearSession } from './session';
+import { passkey, signIn, signOut } from './auth-client';
 
 export async function signInWithEmail(email: string, password: string) {
     try {
@@ -61,6 +62,37 @@ export async function signInWithGoogle() {
     }
 }
 
+export async function registerPasskey() {
+    try {
+        const result = await passkey.addPasskey({
+            name: 'shh.chat-pkey', // name for this passkey
+            authenticatorAttachment: 'platform', // use device authenticator (fingerprint/FaceID)
+        });
+
+        if (!result || result.error) {
+            console.error('Passkey registration failed', result?.error);
+            return;
+        }
+
+        const data = result.data;
+        console.log('Passkey registered:', data);
+    } catch (err) {
+        console.error('Unexpected error registering passkey:', err);
+    }
+}
+
+export async function hasPasskeys() {
+    const passkeys = await passkey.listUserPasskeys();
+
+    console.log(
+        'Executed hasPasskeys, found: ',
+        passkeys.data,
+        passkeys.error?.message
+    );
+
+    return passkeys.data && passkeys.data.length > 0 ? true : false;
+}
+
 export async function getCurrentSession() {
     try {
         const result = await fetch(`${config.apiUrl}/api/me`, {
@@ -91,4 +123,8 @@ export async function getCurrentSession() {
             user: null,
         };
     }
+}
+
+export async function logout() {
+    await clearSession().then(async () => await signOut());
 }
